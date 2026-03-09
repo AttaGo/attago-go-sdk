@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.23']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -v -count=1 -race ./...
+
+  conformance:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Fetch attago-spec
+        uses: actions/checkout@v4
+        with:
+          repository: AttaGo/attago-spec
+          path: attago-spec
+
+      - name: Run conformance
+        env:
+          ATTAGO_BASE_URL: ${{ secrets.ATTAGO_DEV_BASE_URL }}
+          ATTAGO_API_KEY: ${{ secrets.ATTAGO_DEV_API_KEY }}
+          ATTAGO_SPEC_DIR: ./attago-spec
+        run: go test -v -tags conformance -run TestConformance ./...
