@@ -9,10 +9,20 @@ import (
 	"testing"
 )
 
+// mustNewClient is a test helper that calls NewClient and fails the test on error.
+func mustNewClient(t *testing.T, opts ...Option) *Client {
+	t.Helper()
+	c, err := NewClient(opts...)
+	if err != nil {
+		t.Fatalf("NewClient() error: %v", err)
+	}
+	return c
+}
+
 // ── NewClient ───────────────────────────────────────────────────────
 
 func TestNewClient_Defaults(t *testing.T) {
-	c := NewClient()
+	c := mustNewClient(t)
 	if c.baseURL != DefaultBaseURL {
 		t.Errorf("baseURL = %q, want %q", c.baseURL, DefaultBaseURL)
 	}
@@ -25,7 +35,7 @@ func TestNewClient_Defaults(t *testing.T) {
 }
 
 func TestNewClient_WithAPIKey(t *testing.T) {
-	c := NewClient(WithAPIKey("ak_live_test123"))
+	c := mustNewClient(t, WithAPIKey("ak_live_test123"))
 	if c.AuthMode() != AuthModeAPIKey {
 		t.Errorf("AuthMode() = %q, want %q", c.AuthMode(), AuthModeAPIKey)
 	}
@@ -35,7 +45,7 @@ func TestNewClient_WithAPIKey(t *testing.T) {
 }
 
 func TestNewClient_WithBaseURL(t *testing.T) {
-	c := NewClient(WithBaseURL("https://custom.example.com/"))
+	c := mustNewClient(t, WithBaseURL("https://custom.example.com/"))
 	if c.baseURL != "https://custom.example.com" {
 		t.Errorf("baseURL = %q, want trailing slash stripped", c.baseURL)
 	}
@@ -43,34 +53,28 @@ func TestNewClient_WithBaseURL(t *testing.T) {
 
 func TestNewClient_WithHTTPClient(t *testing.T) {
 	custom := &http.Client{}
-	c := NewClient(WithHTTPClient(custom))
+	c := mustNewClient(t, WithHTTPClient(custom))
 	if c.httpClient != custom {
 		t.Error("httpClient should be the custom client")
 	}
 }
 
-func TestNewClient_MultipleAuthModes_Panics(t *testing.T) {
-	defer func() {
-		r := recover()
-		if r == nil {
-			t.Fatal("expected panic for multiple auth modes")
-		}
-	}()
-	NewClient(WithAPIKey("ak_live_x"), WithSigner(&mockSigner{}))
+func TestNewClient_MultipleAuthModes_Error(t *testing.T) {
+	_, err := NewClient(WithAPIKey("ak_live_x"), WithSigner(&mockSigner{}))
+	if err == nil {
+		t.Fatal("expected error for multiple auth modes")
+	}
 }
 
-func TestNewClient_CognitoWithoutClientID_Panics(t *testing.T) {
-	defer func() {
-		r := recover()
-		if r == nil {
-			t.Fatal("expected panic for cognito without clientID")
-		}
-	}()
-	NewClient(WithCognito("user@example.com", "pass", ""))
+func TestNewClient_CognitoWithoutClientID_Error(t *testing.T) {
+	_, err := NewClient(WithCognito("user@example.com", "pass", ""))
+	if err == nil {
+		t.Fatal("expected error for cognito without clientID")
+	}
 }
 
 func TestNewClient_CognitoCreatesAuth(t *testing.T) {
-	c := NewClient(WithCognito("user@example.com", "pass", "client-id-123"))
+	c := mustNewClient(t, WithCognito("user@example.com", "pass", "client-id-123"))
 	if c.AuthMode() != AuthModeCognito {
 		t.Errorf("AuthMode() = %q, want %q", c.AuthMode(), AuthModeCognito)
 	}
@@ -80,7 +84,7 @@ func TestNewClient_CognitoCreatesAuth(t *testing.T) {
 }
 
 func TestNewClient_ServicesInitialized(t *testing.T) {
-	c := NewClient()
+	c := mustNewClient(t)
 	if c.Agent == nil {
 		t.Error("Agent service should be initialized")
 	}
@@ -128,7 +132,7 @@ func TestDo_AddsV1Prefix(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL))
+	c := mustNewClient(t, WithBaseURL(ts.URL))
 	var result map[string]string
 	err := c.do(context.Background(), "GET", "/agent/score", &result)
 	if err != nil {
@@ -149,7 +153,7 @@ func TestDo_PreservesV1Prefix(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL))
+	c := mustNewClient(t, WithBaseURL(ts.URL))
 	err := c.do(context.Background(), "GET", "/v1/agent/score", nil)
 	if err != nil {
 		t.Fatalf("do() error: %v", err)
@@ -166,7 +170,7 @@ func TestDo_SendsAPIKeyHeader(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_live_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_live_test"))
 	err := c.do(context.Background(), "GET", "/test", nil)
 	if err != nil {
 		t.Fatalf("do() error: %v", err)
@@ -185,7 +189,7 @@ func TestDo_SendsUserAgent(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL))
+	c := mustNewClient(t, WithBaseURL(ts.URL))
 	err := c.do(context.Background(), "GET", "/test", nil)
 	if err != nil {
 		t.Fatalf("do() error: %v", err)
@@ -208,7 +212,7 @@ func TestDo_SendsJSONBody(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL))
+	c := mustNewClient(t, WithBaseURL(ts.URL))
 	err := c.do(context.Background(), "POST", "/test", nil, WithBody(map[string]string{"url": "https://example.com"}))
 	if err != nil {
 		t.Fatalf("do() error: %v", err)
@@ -225,7 +229,7 @@ func TestDo_QueryParams(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL))
+	c := mustNewClient(t, WithBaseURL(ts.URL))
 	err := c.do(context.Background(), "GET", "/test", nil, WithQuery("symbol", "BTC"))
 	if err != nil {
 		t.Fatalf("do() error: %v", err)
@@ -238,7 +242,7 @@ func TestDo_204_NoContent(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL))
+	c := mustNewClient(t, WithBaseURL(ts.URL))
 	err := c.do(context.Background(), "DELETE", "/test", nil)
 	if err != nil {
 		t.Fatalf("do() error on 204: %v", err)
@@ -255,7 +259,7 @@ func TestDo_404_ReturnsAPIError(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL))
+	c := mustNewClient(t, WithBaseURL(ts.URL))
 	err := c.do(context.Background(), "GET", "/test", nil)
 	if err == nil {
 		t.Fatal("expected error")
@@ -282,7 +286,7 @@ func TestDo_429_ReturnsRateLimitError(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL))
+	c := mustNewClient(t, WithBaseURL(ts.URL))
 	err := c.do(context.Background(), "GET", "/test", nil)
 	if err == nil {
 		t.Fatal("expected error")
@@ -305,7 +309,7 @@ func TestDo_402_ReturnsPaymentRequiredError(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL))
+	c := mustNewClient(t, WithBaseURL(ts.URL))
 	err := c.do(context.Background(), "GET", "/test", nil)
 	if err == nil {
 		t.Fatal("expected error")
@@ -325,7 +329,7 @@ func TestDo_500_ReturnsAPIError(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL))
+	c := mustNewClient(t, WithBaseURL(ts.URL))
 	err := c.do(context.Background(), "GET", "/test", nil)
 
 	var apiErr *APIError
@@ -346,7 +350,7 @@ func TestDo_CancelledContext(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL))
+	c := mustNewClient(t, WithBaseURL(ts.URL))
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel immediately
 

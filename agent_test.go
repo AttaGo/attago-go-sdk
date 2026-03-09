@@ -24,7 +24,7 @@ func TestAgentService_GetScore(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Agent.GetScore(context.Background(), "BTC")
 	if err != nil {
 		t.Fatalf("GetScore() error: %v", err)
@@ -55,7 +55,7 @@ func TestAgentService_GetData(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Agent.GetData(context.Background(), "BTC", "ETH")
 	if err != nil {
 		t.Fatalf("GetData() error: %v", err)
@@ -75,7 +75,7 @@ func TestAgentService_GetData_NoSymbols(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	_, err := c.Agent.GetData(context.Background())
 	if err != nil {
 		t.Fatalf("GetData() error: %v", err)

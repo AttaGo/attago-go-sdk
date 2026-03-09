@@ -14,7 +14,7 @@ import (
 func TestWebhookListener_StartStop(t *testing.T) {
 	l := NewWebhookListener(WebhookListenerConfig{
 		Secret: "test-secret",
-		Port:   0, // OS-assigned
+		Port:   14000,
 	})
 
 	if err := l.Start(); err != nil {
@@ -35,7 +35,7 @@ func TestWebhookListener_StartStop(t *testing.T) {
 }
 
 func TestWebhookListener_DoubleStart_Error(t *testing.T) {
-	l := NewWebhookListener(WebhookListenerConfig{Secret: "s", Port: 0})
+	l := NewWebhookListener(WebhookListenerConfig{Secret: "s", Port: 14001})
 	if err := l.Start(); err != nil {
 		t.Fatalf("Start() error: %v", err)
 	}

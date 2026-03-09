@@ -1,6 +1,9 @@
 package attago
 
-import "context"
+import (
+	"context"
+	"strings"
+)
 
 // AgentService provides access to agent scoring endpoints.
 type AgentService struct {
@@ -23,7 +26,7 @@ func (s *AgentService) GetData(ctx context.Context, symbols ...string) (*AgentDa
 	var result AgentDataResponse
 	var opts []RequestOption
 	if len(symbols) > 0 {
-		opts = append(opts, WithQuery("symbols", joinStrings(symbols)))
+		opts = append(opts, WithQuery("symbols", strings.Join(symbols, ",")))
 	}
 	err := s.client.do(ctx, "GET", "/agent/data", &result, opts...)
 	if err != nil {
@@ -32,13 +35,3 @@ func (s *AgentService) GetData(ctx context.Context, symbols ...string) (*AgentDa
 	return &result, nil
 }
 
-func joinStrings(ss []string) string {
-	if len(ss) == 0 {
-		return ""
-	}
-	result := ss[0]
-	for _, s := range ss[1:] {
-		result += "," + s
-	}
-	return result
-}

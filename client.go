@@ -105,7 +105,7 @@ type Client struct {
 //	attago.NewClient(attago.WithAPIKey("ak_live_..."))
 //	attago.NewClient(attago.WithSigner(walletSigner))
 //	attago.NewClient(attago.WithCognito(email, password, clientID))
-func NewClient(opts ...Option) *Client {
+func NewClient(opts ...Option) (*Client, error) {
 	c := &Client{
 		baseURL:       DefaultBaseURL,
 		httpClient:    http.DefaultClient,
@@ -128,13 +128,13 @@ func NewClient(opts ...Option) *Client {
 		modes++
 	}
 	if modes > 1 {
-		panic("attago: only one auth mode allowed (apiKey, signer, or cognito)")
+		return nil, fmt.Errorf("attago: only one auth mode allowed (apiKey, signer, or cognito)")
 	}
 
 	// ── Set up Cognito auth ──
 	if c.AuthMode() == AuthModeCognito {
 		if c.cognitoClientID == "" {
-			panic("attago: cognitoClientID is required for Cognito authentication")
+			return nil, fmt.Errorf("attago: cognitoClientID is required for Cognito authentication")
 		}
 		c.Auth = newCognitoAuth(c.cognitoClientID, c.cognitoRegion, c.httpClient, c.cognitoEmail, c.cognitoPassword)
 	}
@@ -152,7 +152,7 @@ func NewClient(opts ...Option) *Client {
 	c.Wallets = &WalletService{client: c}
 	c.Webhooks = &WebhookService{client: c}
 
-	return c
+	return c, nil
 }
 
 // AuthMode returns the active authentication mode.
@@ -297,7 +297,7 @@ func (c *Client) do(ctx context.Context, method, path string, result any, opts .
 		return nil
 	}
 
-	if err := json.NewDecoder(res.Body).Decode(result); err != nil {
+	if err := json.NewDecoder(io.LimitReader(res.Body, 10<<20)).Decode(result); err != nil {
 		return fmt.Errorf("attago: decode response: %w", err)
 	}
 	return nil
@@ -305,7 +305,7 @@ func (c *Client) do(ctx context.Context, method, path string, result any, opts .
 
 // handleHTTPError maps HTTP error responses to typed errors.
 func handleHTTPError(res *http.Response) error {
-	bodyBytes, _ := io.ReadAll(res.Body)
+	bodyBytes, _ := io.ReadAll(io.LimitReader(res.Body, 1<<20))
 
 	var body map[string]any
 	_ = json.Unmarshal(bodyBytes, &body)

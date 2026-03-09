@@ -31,7 +31,7 @@ func TestWebhookService_Create(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Webhooks.Create(context.Background(), "https://example.com/hook")
 	if err != nil {
 		t.Fatalf("Create() error: %v", err)
@@ -59,7 +59,7 @@ func TestWebhookService_List(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	items, err := c.Webhooks.List(context.Background())
 	if err != nil {
 		t.Fatalf("List() error: %v", err)
@@ -78,7 +78,7 @@ func TestWebhookService_Delete(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	err := c.Webhooks.Delete(context.Background(), "wh-123")
 	if err != nil {
 		t.Fatalf("Delete() error: %v", err)
@@ -100,7 +100,7 @@ func TestWebhookService_SendServerTest(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Webhooks.SendServerTest(context.Background(), "wh-123")
 	if err != nil {
 		t.Fatalf("SendServerTest() error: %v", err)
@@ -230,7 +230,7 @@ func TestWebhookService_SendTest_Success(t *testing.T) {
 	}))
 	defer receiver.Close()
 
-	c := NewClient()
+	c := mustNewClient(t)
 	result, err := c.Webhooks.SendTest(context.Background(), SendTestOptions{
 		URL:       receiver.URL,
 		Secret:    "test-secret",
@@ -253,7 +253,7 @@ func TestWebhookService_SendTest_PermanentFailure(t *testing.T) {
 	}))
 	defer receiver.Close()
 
-	c := NewClient()
+	c := mustNewClient(t)
 	result, err := c.Webhooks.SendTest(context.Background(), SendTestOptions{
 		URL:       receiver.URL,
 		Secret:    "test-secret",
@@ -282,7 +282,7 @@ func TestWebhookService_SendTest_RetryOn500(t *testing.T) {
 	}))
 	defer receiver.Close()
 
-	c := NewClient()
+	c := mustNewClient(t)
 	result, err := c.Webhooks.SendTest(context.Background(), SendTestOptions{
 		URL:       receiver.URL,
 		Secret:    "test-secret",

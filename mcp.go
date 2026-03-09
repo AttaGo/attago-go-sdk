@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"sync/atomic"
 )
 
@@ -134,18 +135,55 @@ func (s *MCPService) rpc(ctx context.Context, method string, params map[string]a
 	if err != nil {
 		return fmt.Errorf("attago: MCP request failed: %w", err)
 	}
-	defer res.Body.Close()
 
+	bodyBytes2, err := io.ReadAll(io.LimitReader(res.Body, 1<<20))
+	res.Body.Close()
+	if err != nil {
+		return fmt.Errorf("attago: read MCP response: %w", err)
+	}
+
+	// ── Handle HTTP errors with typed error returns ──
 	if res.StatusCode >= 400 {
-		respBody, _ := io.ReadAll(res.Body)
-		return &MCPError{
-			Code:    res.StatusCode,
-			Message: fmt.Sprintf("HTTP %d: %s", res.StatusCode, string(respBody)),
+		var errBody map[string]any
+		_ = json.Unmarshal(bodyBytes2, &errBody)
+		msg, _ := errBody["error"].(string)
+		if msg == "" {
+			msg, _ = errBody["message"].(string)
+		}
+		if msg == "" {
+			msg = fmt.Sprintf("HTTP %d", res.StatusCode)
+		}
+
+		apiErr := &APIError{
+			StatusCode: res.StatusCode,
+			Message:    msg,
+			Body:       errBody,
+		}
+
+		switch res.StatusCode {
+		case 402:
+			reqs := ParsePaymentRequired(res.Header)
+			return &PaymentRequiredError{
+				APIError:            apiErr,
+				PaymentRequirements: reqs,
+			}
+		case 429:
+			retryAfter := 0
+			if s := res.Header.Get("Retry-After"); s != "" {
+				retryAfter, _ = strconv.Atoi(s)
+			}
+			return &RateLimitError{
+				APIError:   apiErr,
+				RetryAfter: retryAfter,
+			}
+		default:
+			return apiErr
 		}
 	}
 
+	// ── Parse JSON-RPC response ──
 	var rpcRes jsonRPCResponse
-	if err := json.NewDecoder(res.Body).Decode(&rpcRes); err != nil {
+	if err := json.Unmarshal(bodyBytes2, &rpcRes); err != nil {
 		return fmt.Errorf("attago: decode MCP response: %w", err)
 	}
 

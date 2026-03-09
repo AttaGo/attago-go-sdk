@@ -159,11 +159,12 @@ func (l *WebhookListener) Listening() bool {
 
 func (l *WebhookListener) handleWebhook(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		writeJSON(w, 404, map[string]string{"error": "Not found"})
+		w.Header().Set("Allow", "POST")
+		writeJSON(w, 405, map[string]string{"error": "Method not allowed"})
 		return
 	}
 
-	rawBody, err := io.ReadAll(r.Body)
+	rawBody, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
 	if err != nil {
 		l.emitError(fmt.Errorf("read body: %w", err))
 		writeJSON(w, 400, map[string]string{"error": "Invalid payload"})

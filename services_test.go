@@ -25,7 +25,7 @@ func TestSubscriptionService_Catalog(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Subscriptions.Catalog(context.Background())
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -47,7 +47,7 @@ func TestSubscriptionService_List(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	subs, err := c.Subscriptions.List(context.Background())
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -67,7 +67,7 @@ func TestSubscriptionService_Create(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Subscriptions.Create(context.Background(), CreateSubscriptionInput{
 		TokenID: "BTC",
 		Label:   "Test alert",
@@ -91,7 +91,7 @@ func TestSubscriptionService_Update(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	newLabel := "Updated"
 	_, err := c.Subscriptions.Update(context.Background(), "sub-1", UpdateSubscriptionInput{Label: &newLabel})
 	if err != nil {
@@ -108,7 +108,7 @@ func TestSubscriptionService_Delete(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	err := c.Subscriptions.Delete(context.Background(), "sub-1")
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -127,7 +127,7 @@ func TestPaymentService_Subscribe(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Payments.Subscribe(context.Background(), SubscribeInput{Tier: "pro", BillingCycle: "monthly"})
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -147,7 +147,7 @@ func TestPaymentService_Status(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Payments.Status(context.Background())
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -167,7 +167,7 @@ func TestPaymentService_UpgradeQuote(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Payments.UpgradeQuote(context.Background(), "business", "monthly")
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -189,7 +189,7 @@ func TestWalletService_Register(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Wallets.Register(context.Background(), RegisterWalletInput{
 		WalletAddress: "0xabc", Chain: "base", Signature: "sig", Timestamp: 1709856000,
 	})
@@ -210,7 +210,7 @@ func TestWalletService_List(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	wallets, err := c.Wallets.List(context.Background())
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -229,7 +229,7 @@ func TestWalletService_Remove(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	err := c.Wallets.Remove(context.Background(), "0xabc")
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -250,7 +250,7 @@ func TestAPIKeyService_Create(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.APIKeys.Create(context.Background(), "my-bot")
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -269,7 +269,7 @@ func TestAPIKeyService_List(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	items, err := c.APIKeys.List(context.Background())
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -288,7 +288,7 @@ func TestAPIKeyService_Revoke(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	err := c.APIKeys.Revoke(context.Background(), "k-1")
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -310,7 +310,7 @@ func TestBundleService_List(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Bundles.List(context.Background())
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -330,7 +330,7 @@ func TestBundleService_Purchase(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Bundles.Purchase(context.Background(), PurchaseBundleInput{BundleIndex: 0, WalletAddress: "0x1"})
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -351,7 +351,7 @@ func TestPushService_List(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	items, err := c.Push.List(context.Background())
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -371,7 +371,7 @@ func TestPushService_Create(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Push.Create(context.Background(), CreatePushInput{
 		Endpoint: "https://push.example.com",
 		Keys:     PushKeys{P256DH: "key1", Auth: "key2"},
@@ -393,7 +393,7 @@ func TestPushService_Delete(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	err := c.Push.Delete(context.Background(), "ps-1")
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -417,7 +417,7 @@ func TestRedeemService_Redeem(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Redeem.Redeem(context.Background(), "PROMO-2026")
 	if err != nil {
 		t.Fatalf("error: %v", err)

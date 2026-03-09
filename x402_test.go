@@ -108,7 +108,7 @@ func TestDoWithX402_NonPaymentResponse(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(
+	c := mustNewClient(t,
 		WithBaseURL(ts.URL),
 		WithSigner(&mockSigner{network: "eip155:8453"}),
 	)
@@ -159,7 +159,7 @@ func TestDoWithX402_AutoRetryOnPayment(t *testing.T) {
 		},
 	}
 
-	c := NewClient(WithBaseURL(ts.URL), WithSigner(signer))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithSigner(signer))
 	result, err := c.Agent.GetScore(context.Background(), "BTC")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -189,7 +189,7 @@ func TestDoWithX402_NoMatchingNetwork(t *testing.T) {
 	defer ts.Close()
 
 	signer := &mockSigner{network: "eip155:8453"} // Base
-	c := NewClient(WithBaseURL(ts.URL), WithSigner(signer))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithSigner(signer))
 
 	_, err := c.Agent.GetScore(context.Background(), "BTC")
 	if err == nil {
@@ -221,7 +221,7 @@ func TestDoWithX402_SignerError(t *testing.T) {
 			return "", errors.New("wallet locked")
 		},
 	}
-	c := NewClient(WithBaseURL(ts.URL), WithSigner(signer))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithSigner(signer))
 
 	_, err := c.Agent.GetScore(context.Background(), "BTC")
 	if err == nil {
@@ -246,7 +246,7 @@ func TestDoWithX402_RetryAlso402(t *testing.T) {
 	defer ts.Close()
 
 	signer := &mockSigner{network: "eip155:8453"}
-	c := NewClient(WithBaseURL(ts.URL), WithSigner(signer))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithSigner(signer))
 
 	_, err := c.Agent.GetScore(context.Background(), "BTC")
 	if err == nil {

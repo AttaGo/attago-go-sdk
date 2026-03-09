@@ -18,7 +18,7 @@ func TestDataService_GetLatest(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Data.GetLatest(context.Background())
 	if err != nil {
 		t.Fatalf("GetLatest() error: %v", err)
@@ -42,7 +42,7 @@ func TestDataService_GetTokenData(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.Data.GetTokenData(context.Background(), "BTC")
 	if err != nil {
 		t.Fatalf("GetTokenData() error: %v", err)
@@ -65,7 +65,7 @@ func TestDataService_GetDataPush(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL))
+	c := mustNewClient(t, WithBaseURL(ts.URL))
 	result, err := c.Data.GetDataPush(context.Background(), "2026-03-07T12-00-00-000Z-abc")
 	if err != nil {
 		t.Fatalf("GetDataPush() error: %v", err)

@@ -41,7 +41,7 @@ func TestMCPService_Initialize(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.MCP.Initialize(context.Background())
 	if err != nil {
 		t.Fatalf("Initialize() error: %v", err)
@@ -76,7 +76,7 @@ func TestMCPService_ListTools(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	tools, err := c.MCP.ListTools(context.Background())
 	if err != nil {
 		t.Fatalf("ListTools() error: %v", err)
@@ -115,7 +115,7 @@ func TestMCPService_CallTool(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	result, err := c.MCP.CallTool(context.Background(), "get_asset_score", map[string]any{"symbol": "BTC"})
 	if err != nil {
 		t.Fatalf("CallTool() error: %v", err)
@@ -145,7 +145,7 @@ func TestMCPService_Ping(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	err := c.MCP.Ping(context.Background())
 	if err != nil {
 		t.Fatalf("Ping() error: %v", err)
@@ -165,7 +165,7 @@ func TestMCPService_JsonRpcError(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	_, err := c.MCP.CallTool(context.Background(), "nonexistent", nil)
 	if err == nil {
 		t.Fatal("expected error")
@@ -193,7 +193,7 @@ func TestMCPService_AutoIncrementIDs(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewClient(WithBaseURL(ts.URL), WithAPIKey("ak_test"))
+	c := mustNewClient(t, WithBaseURL(ts.URL), WithAPIKey("ak_test"))
 	c.MCP.Ping(context.Background())
 	c.MCP.Ping(context.Background())
 	c.MCP.Ping(context.Background())

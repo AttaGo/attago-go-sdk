@@ -1,6 +1,7 @@
 package attago
 
 import (
+	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -8,7 +9,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -165,7 +165,7 @@ func deliverWithRetry(ctx context.Context, hc *http.Client, targetURL string, bo
 
 		timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(requestTimeoutMs)*time.Millisecond)
 
-		req, err := http.NewRequestWithContext(timeoutCtx, "POST", targetURL, io.NopCloser(newBytesReader(body)))
+		req, err := http.NewRequestWithContext(timeoutCtx, "POST", targetURL, bytes.NewReader(body))
 		if err != nil {
 			cancel()
 			lastError = err.Error()
@@ -220,21 +220,3 @@ func deliverWithRetry(ctx context.Context, hc *http.Client, targetURL string, bo
 	}, nil
 }
 
-// newBytesReader is a helper so we don't import bytes in this file just for this.
-func newBytesReader(b []byte) io.Reader {
-	return &bytesReader{data: b, pos: 0}
-}
-
-type bytesReader struct {
-	data []byte
-	pos  int
-}
-
-func (r *bytesReader) Read(p []byte) (int, error) {
-	if r.pos >= len(r.data) {
-		return 0, io.EOF
-	}
-	n := copy(p, r.data[r.pos:])
-	r.pos += n
-	return n, nil
-}

@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"sync"
 )
 
 // CognitoAuth handles Cognito JWT authentication.
@@ -16,7 +18,9 @@ type CognitoAuth struct {
 	httpClient *http.Client
 	email      string
 	password   string
-	tokens     *CognitoTokens
+
+	mu     sync.RWMutex
+	tokens *CognitoTokens
 }
 
 // newCognitoAuth creates a CognitoAuth instance. Called internally by NewClient.
@@ -33,16 +37,23 @@ func newCognitoAuth(clientID, region string, hc *http.Client, email, password st
 // GetIDToken returns a valid ID token, auto-refreshing if expired.
 // Performs sign-in on first call if email/password were provided.
 func (a *CognitoAuth) GetIDToken(ctx context.Context) (string, error) {
+	a.mu.RLock()
 	if a.tokens != nil && a.tokens.IDToken != "" {
 		// TODO: check expiry and refresh
-		return a.tokens.IDToken, nil
+		tok := a.tokens.IDToken
+		a.mu.RUnlock()
+		return tok, nil
 	}
+	a.mu.RUnlock()
 
 	if a.email != "" && a.password != "" {
 		if err := a.SignIn(ctx); err != nil {
 			return "", err
 		}
-		return a.tokens.IDToken, nil
+		a.mu.RLock()
+		tok := a.tokens.IDToken
+		a.mu.RUnlock()
+		return tok, nil
 	}
 
 	return "", &AuthError{Message: "No Cognito tokens available — call SignIn() first"}
@@ -54,23 +65,31 @@ func (a *CognitoAuth) SignIn(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	a.mu.Lock()
 	a.tokens = tokens
+	a.mu.Unlock()
 	return nil
 }
 
 // SignOut clears the stored tokens.
 func (a *CognitoAuth) SignOut() {
+	a.mu.Lock()
 	a.tokens = nil
+	a.mu.Unlock()
 }
 
 // GetTokens returns the current token set (for persistence).
 func (a *CognitoAuth) GetTokens() *CognitoTokens {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	return a.tokens
 }
 
 // SetTokens restores a previously persisted token set.
 func (a *CognitoAuth) SetTokens(tokens *CognitoTokens) {
+	a.mu.Lock()
 	a.tokens = tokens
+	a.mu.Unlock()
 }
 
 // RespondToMFA completes an MFA challenge.
@@ -79,7 +98,9 @@ func (a *CognitoAuth) RespondToMFA(ctx context.Context, session, code string) er
 	if err != nil {
 		return err
 	}
+	a.mu.Lock()
 	a.tokens = tokens
+	a.mu.Unlock()
 	return nil
 }
 
@@ -235,15 +256,22 @@ func cognitoRequest(ctx context.Context, hc *http.Client, region, target string,
 	}
 	defer res.Body.Close()
 
-	var result map[string]any
-	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("attago: decode cognito response: %w", err)
+	respBytes, err := io.ReadAll(io.LimitReader(res.Body, 1<<20))
+	if err != nil {
+		return nil, fmt.Errorf("attago: read cognito response: %w", err)
 	}
 
 	if res.StatusCode >= 400 {
-		msg, _ := result["message"].(string)
-		code, _ := result["__type"].(string)
+		var errBody map[string]any
+		_ = json.Unmarshal(respBytes, &errBody)
+		msg, _ := errBody["message"].(string)
+		code, _ := errBody["__type"].(string)
 		return nil, &AuthError{Message: msg, Code: code}
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(respBytes, &result); err != nil {
+		return nil, fmt.Errorf("attago: decode cognito response: %w", err)
 	}
 
 	return result, nil
