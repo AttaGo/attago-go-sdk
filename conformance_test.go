@@ -69,6 +69,9 @@ func TestConformance(t *testing.T) {
 	}
 
 	apiKey := os.Getenv("ATTAGO_API_KEY")
+	if apiKey == "" {
+		t.Skip("ATTAGO_API_KEY not set — skipping conformance tests")
+	}
 
 	specDir := os.Getenv("ATTAGO_SPEC_DIR")
 	if specDir == "" {
@@ -374,6 +377,11 @@ func TestConformance_X402(t *testing.T) {
 	var fx fixture
 	if err := json.Unmarshal(data, &fx); err != nil {
 		t.Fatalf("parse fixture: %v", err)
+	}
+
+	// Skip if fixture uses JWT auth (CI only has API keys)
+	if shouldSkip(fx) {
+		t.Skip("auto-skipped: fixture requires JWT auth")
 	}
 
 	url := strings.TrimRight(baseURL, "/") + fx.Request.Path
