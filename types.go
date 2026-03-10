@@ -122,7 +122,7 @@ type AgentDataResponse struct {
 	Assets     map[string]map[string]any `json:"assets"`
 	AssetOrder []string                  `json:"assetOrder"`
 	Market     map[string]any            `json:"market"`
-	Sources    []map[string]any          `json:"sources"`
+	Sources    any                       `json:"sources"`
 	Meta       map[string]any            `json:"meta"`
 	RequestID  string                    `json:"requestId,omitempty"`
 }
