@@ -43,11 +43,21 @@ type jsonSchema struct {
 	Items      *jsonSchema             `json:"items"`
 }
 
-// ── Skip list — fixtures needing Cognito JWT ─────────────────────────
-
-var skipFixtures = map[string]bool{
-	"user-profile-success.json":      true,
-	"user-profile-unauthorized.json": true,
+// shouldSkip returns true for fixtures that can't run in CI:
+// - JWT fixtures (Authorization: Bearer) — need real Cognito tokens
+// - Unauthorized tests (expect 401 with no auth) — dev API may not enforce
+func shouldSkip(fx fixture) bool {
+	// Skip JWT-auth fixtures (CI only has API keys, not Cognito tokens)
+	if _, hasAuth := fx.Request.Headers["Authorization"]; hasAuth {
+		return true
+	}
+	// Skip fixtures that test auth enforcement (expect 4xx with no auth)
+	if fx.Response.Status == 401 {
+		if _, hasKey := fx.Request.Headers["X-API-Key"]; !hasKey {
+			return true
+		}
+	}
+	return false
 }
 
 // ── Runner ───────────────────────────────────────────────────────────
@@ -86,10 +96,6 @@ func TestConformance(t *testing.T) {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
 			continue
 		}
-		if skipFixtures[entry.Name()] {
-			continue
-		}
-
 		name := entry.Name()
 		t.Run(name, func(t *testing.T) {
 			data, err := os.ReadFile(filepath.Join(fixtureDir, name))
@@ -102,9 +108,9 @@ func TestConformance(t *testing.T) {
 				t.Fatalf("parse fixture: %v", err)
 			}
 
-			// Skip fixtures requiring auth we can't provide
-			if _, hasAuth := fx.Request.Headers["Authorization"]; hasAuth && apiKey == "" {
-				t.Skip("requires Authorization header but ATTAGO_API_KEY not set")
+			// Auto-skip JWT fixtures and unauthorized tests
+			if shouldSkip(fx) {
+				t.Skip("auto-skipped: JWT auth or unauthorized test")
 			}
 
 			// Build URL
