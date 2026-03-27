@@ -477,6 +477,38 @@ type RedeemResponse struct {
 	Message   string `json:"message"`
 }
 
+// ── Messaging types ─────────────────────────────────────────────────
+
+// MessagingLink is a connected messaging platform returned by the API.
+type MessagingLink struct {
+	Platform string `json:"platform"` // "telegram"
+	Username string `json:"username"`
+	LinkedAt string `json:"linkedAt"`
+}
+
+// LinkResult is the response from linking a messaging platform.
+type LinkResult struct {
+	Platform string `json:"platform"`
+	Username string `json:"username"`
+	Linked   bool   `json:"linked"`
+}
+
+// UnlinkResult is the response from unlinking a messaging platform.
+type UnlinkResult struct {
+	Unlinked bool `json:"unlinked"`
+}
+
+// MessagingTestResult is the response from test delivery to all connected platforms.
+type MessagingTestResult struct {
+	Results map[string]MessagingTestPlatformResult `json:"results"`
+}
+
+// MessagingTestPlatformResult is the per-platform result within a test delivery.
+type MessagingTestPlatformResult struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
 // ── MCP types ───────────────────────────────────────────────────────
 
 // MCPServerInfo is the response from MCP initialize.

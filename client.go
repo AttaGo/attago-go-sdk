@@ -90,6 +90,7 @@ type Client struct {
 	Bundles       *BundleService
 	Data          *DataService
 	MCP           *MCPService
+	Messaging     *MessagingService
 	Payments      *PaymentService
 	Push          *PushService
 	Redeem        *RedeemService
@@ -145,6 +146,7 @@ func NewClient(opts ...Option) (*Client, error) {
 	c.Bundles = &BundleService{client: c}
 	c.Data = &DataService{client: c}
 	c.MCP = &MCPService{client: c}
+	c.Messaging = &MessagingService{client: c}
 	c.Payments = &PaymentService{client: c}
 	c.Push = &PushService{client: c}
 	c.Redeem = &RedeemService{client: c}
