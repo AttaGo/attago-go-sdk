@@ -30,9 +30,10 @@ type fixtureResponse struct {
 }
 
 type fixture struct {
-	Description string          `json:"description"`
-	Request     fixtureRequest  `json:"request"`
-	Response    fixtureResponse `json:"response"`
+	Description   string          `json:"description"`
+	RequiresSetup bool            `json:"requiresSetup"`
+	Request       fixtureRequest  `json:"request"`
+	Response      fixtureResponse `json:"response"`
 }
 
 // ── Schema types (structural validation) ─────────────────────────────
@@ -57,6 +58,10 @@ func shouldSkip(fx fixture) bool {
 		if _, hasKey := fx.Request.Headers["X-API-Key"]; !hasKey {
 			return true
 		}
+	}
+	// Skip fixtures that need pre-existing data (e.g. registered webhook)
+	if fx.RequiresSetup {
+		return true
 	}
 	return false
 }
