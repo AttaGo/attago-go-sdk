@@ -16,11 +16,12 @@ import (
 // ── Fixture types ────────────────────────────────────────────────────
 
 type fixtureRequest struct {
-	Method  string            `json:"method"`
-	Path    string            `json:"path"`
-	Headers map[string]string `json:"headers"`
-	Query   map[string]string `json:"query"`
-	Body    any               `json:"body"`
+	Method         string            `json:"method"`
+	Path           string            `json:"path"`
+	Headers        map[string]string `json:"headers"`
+	Query          map[string]string `json:"query"`
+	PathParameters map[string]string `json:"pathParameters"`
+	Body           any               `json:"body"`
 }
 
 type fixtureResponse struct {
@@ -116,8 +117,12 @@ func TestConformance(t *testing.T) {
 				t.Skip("auto-skipped: JWT auth or unauthorized test")
 			}
 
-			// Build URL
-			url := strings.TrimRight(baseURL, "/") + fx.Request.Path
+			// Substitute path parameters (e.g. {id}) before building URL
+			resolvedPath := fx.Request.Path
+			for k, v := range fx.Request.PathParameters {
+				resolvedPath = strings.ReplaceAll(resolvedPath, "{"+k+"}", v)
+			}
+			url := strings.TrimRight(baseURL, "/") + resolvedPath
 			if len(fx.Request.Query) > 0 {
 				params := make([]string, 0, len(fx.Request.Query))
 				for k, v := range fx.Request.Query {
